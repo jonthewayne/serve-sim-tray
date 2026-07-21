@@ -2,9 +2,10 @@
 
 A tiny macOS **menu-bar app** that runs an iOS Simulator as a live, controllable stream — in one
 click. It wraps [serve-sim](https://github.com/EvanBacon/serve-sim) (boots a simulator and streams it
-as a web page with touch/type control). serve-sim launches Apple's Simulator app to capture frames; the
-tray auto-hides that window on Start (it still shows in ⌘Tab while streaming — a macOS limitation). Use
-it **locally** on your own machine, or
+as a web page with touch/type control). serve-sim launches Apple's Simulator app (in the background) to
+capture frames; on a cold Start the tray opens the stream in your browser over it, and you can **Hide
+Native Sim** to tuck the window away. (Simulator still shows in ⌘Tab while streaming — a macOS
+limitation.) Use it **locally** on your own machine, or
 **share it over Tailscale** so other devices — or an AI agent on another machine — can drive it.
 
 ## Two ways to use it

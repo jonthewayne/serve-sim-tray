@@ -1,7 +1,7 @@
 #!/bin/zsh
 # serve-sim-ctl — manage the serve-sim "render box". Self-contained + auto-detecting.
 # Subcommands: start | pause | stop | open-sim | status | url
-#   start     — reap-if-stale + boot a sim + run serve-sim (opens Simulator, auto-hidden) + tailscale
+#   start     — reap-if-stale + boot a sim + run serve-sim (opens Simulator in background) + tailscale
 #   pause     — stop serve-sim only (sim stays booted; Tailscale untouched)
 #   stop      — stop serve-sim + power off the sim to free RAM (Tailscale untouched)
 #   open-sim  — open the NATIVE Simulator.app window (Hide with Cmd-H; do NOT Quit)
