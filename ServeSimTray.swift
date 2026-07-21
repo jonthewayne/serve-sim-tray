@@ -118,7 +118,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     // MARK: - Actions
-    @objc func start()    { run(["start"]) { [weak self] _ in DispatchQueue.main.async { self?.refresh() } } }
+    @objc func start() {
+        run(["start"]) { [weak self] _ in
+            DispatchQueue.main.async {
+                self?.refresh()
+                // serve-sim launches Simulator.app itself (open -ga Simulator); tuck it out of the way.
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2) { self?.simApp?.hide() }
+            }
+        }
+    }
     @objc func pauseSim() { run(["pause"]) { [weak self] _ in DispatchQueue.main.async { self?.refresh() } } }
     @objc func stopSim()  { run(["stop"])  { [weak self] _ in DispatchQueue.main.async { self?.refresh() } } }
 
