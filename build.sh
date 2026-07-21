@@ -18,3 +18,11 @@ cp GUIDE.html          "$APP/Contents/Resources/GUIDE.html"
 chmod +x "$APP/Contents/Resources/serve-sim-ctl"
 
 echo "done → $APP"
+
+# optional: ./build.sh install  → copy into /Applications (no signing needed; built locally)
+if [ "$1" = "install" ]; then
+  echo "installing to /Applications…"
+  rm -rf /Applications/ServeSimTray.app
+  cp -R "$APP" /Applications/ServeSimTray.app
+  echo "installed → /Applications/ServeSimTray.app"
+fi

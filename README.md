@@ -27,8 +27,9 @@ pause to ask me when you need input (App Store sign-in, Tailscale login, enablin
 2. Ensure Node 20+ is installed (e.g. via nvm).
 3. (Optional, for remote access) Ensure Tailscale is installed and signed in, and enable
    Tailscale Serve for my tailnet at login.tailscale.com. Skip for local-only use.
-4. In the serve-sim-tray folder run ./build.sh, then move ServeSimTray.app to /Applications
-   and turn on "Start at Login" from its menu.
+4. In the serve-sim-tray folder run ./build.sh install (compiles locally and copies the app to
+   /Applications — no code signing or Apple Developer account needed), then launch it from
+   /Applications and turn on "Start at Login" from its menu.
 Then open the app's "Check Setup…" to confirm everything is green.
 ```
 
@@ -81,7 +82,8 @@ Move `ServeSimTray.app` to `/Applications` and use **Start at Login** to auto-ru
 
 ## Notes / limits
 
-- Unsigned local build → Gatekeeper warns on another Mac (right-click ▸ Open, or sign/notarize with an
-  Apple Developer ID to distribute cleanly).
+- **No code signing needed** when each user *builds it themselves* from source (as above): a locally
+  compiled app isn't quarantined, so it runs with no Gatekeeper warning and needs no Apple Developer
+  account. Signing/notarizing is only required if you distribute a *prebuilt binary*.
 - Keep the Mac **awake + logged in** while in use (the simulator needs the GUI session).
 - Default port `3200` lives in `serve-sim-ctl` — easy to tweak.

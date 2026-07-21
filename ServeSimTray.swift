@@ -59,7 +59,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(.separator())
 
         if running {
-            add(menu, "View Serve-Sim — This Mac", #selector(viewLocal), "o")
+            add(menu, "View Serve-Sim — This Mac", #selector(viewLocal), "")
             if isTailnet {
                 add(menu, "View Serve-Sim — Tailnet", #selector(viewTailnet), "")
             }
@@ -71,10 +71,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 add(menu, "Open Native Sim", #selector(openNativeSim), "")
             }
             menu.addItem(.separator())
-            add(menu, "Pause Sim", #selector(pauseSim), "s")
+            add(menu, "Pause Sim", #selector(pauseSim), "")
             add(menu, "Stop Sim", #selector(stopSim), "")
         } else {
-            add(menu, "Start", #selector(start), "s")
+            add(menu, "Start", #selector(start), "")
         }
         menu.addItem(.separator())
 
@@ -85,11 +85,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         login.target = self; login.state = loginEnabled ? .on : .off; sub.addItem(login)
         let chk = NSMenuItem(title: "Check Setup…", action: #selector(checkSetup), keyEquivalent: ""); chk.target = self; sub.addItem(chk)
         let gd = NSMenuItem(title: "Guide", action: #selector(openGuide), keyEquivalent: ""); gd.target = self; sub.addItem(gd)
+        sub.addItem(.separator())
+        let cp = NSMenuItem(title: isTailnet ? "Copy Tailnet URL" : "Copy Sim URL", action: #selector(copyTailnet), keyEquivalent: "")
+        cp.target = self; sub.addItem(cp)
         settings.submenu = sub
         menu.addItem(settings)
 
         menu.addItem(.separator())
-        add(menu, "Quit", #selector(quitApp), "q")
+        add(menu, "Quit", #selector(quitApp), "")
     }
 
     @discardableResult
