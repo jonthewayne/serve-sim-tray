@@ -2,8 +2,8 @@
 # serve-sim-ctl — manage the serve-sim "render box". Self-contained + auto-detecting.
 # Subcommands: start | pause | stop | open-sim | status | url
 #   start     — reap-if-stale + boot a sim + run serve-sim (opens Simulator in background) + tailscale
-#   pause     — stop serve-sim only (sim stays booted; Tailscale untouched)
-#   stop      — stop serve-sim + power off the sim to free RAM (Tailscale untouched)
+#   pause     — stop serve-sim only (sim stays booted; turns OFF public Funnel)
+#   stop      — stop serve-sim + power off the sim to free RAM (turns OFF public Funnel)
 #   open-sim  — open the NATIVE Simulator.app window (Hide with Cmd-H; do NOT Quit)
 #   status    — "running" (serve-sim up AND a device booted) / "stopped"; auto-reaps stale serve-sim
 #   url        — print this machine's tailnet serve URL
@@ -58,6 +58,9 @@ share_state() {
   fi
 }
 
+# turn OFF public Funnel (revert to private Serve). no-op without tailscale.
+funnel_off() { if command -v tailscale >/dev/null 2>&1; then tailscale funnel --https=443 off >/dev/null 2>&1 || true; fi; }
+
 case "$1" in
   start)
     reap_if_stale
@@ -67,16 +70,12 @@ case "$1" in
       nohup npx --yes serve-sim >"$LOG" 2>&1 &
       for i in {1..10}; do is_serving && break; sleep 1; done
     fi
-    if command -v tailscale >/dev/null 2>&1; then                  # expose over Tailscale, preserving the
-      if [ "$(share_state)" = public ]; then                       # current share mode (public Funnel vs
-        tailscale funnel --bg $PORT >/dev/null 2>&1 || true        # private Serve) across restarts
-      else
-        tailscale serve --bg $PORT >/dev/null 2>&1 || true
-      fi
+    if command -v tailscale >/dev/null 2>&1; then                  # private (tailnet-only) by default —
+      tailscale serve --bg $PORT >/dev/null 2>&1 || true           # public sharing is opt-in each session
     fi
     ;;
-  pause)    pkill -f "serve-sim" 2>/dev/null || true ;;
-  stop)     pkill -f "serve-sim" 2>/dev/null || true; xcrun simctl shutdown all 2>/dev/null || true ;;
+  pause)    pkill -f "serve-sim" 2>/dev/null || true; funnel_off ;;
+  stop)     pkill -f "serve-sim" 2>/dev/null || true; xcrun simctl shutdown all 2>/dev/null || true; funnel_off ;;
   open-sim) open -a Simulator ;;
   status)   reap_if_stale; if is_serving && device_booted; then echo running; else echo stopped; fi ;;
   url)       tailnet_url ;;
