@@ -54,7 +54,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             let warn = NSMenuItem(title: warnText, action: nil, keyEquivalent: ""); warn.isEnabled = false
             menu.addItem(warn); menu.addItem(.separator())
         }
-        let header = NSMenuItem(title: running ? "● serve-sim: running" : "○ serve-sim: stopped", action: nil, keyEquivalent: "")
+        let header = NSMenuItem(title: running ? "🟢 serve-sim: running" : "○ serve-sim: stopped", action: nil, keyEquivalent: "")
         header.isEnabled = false; menu.addItem(header)
         menu.addItem(.separator())
 
