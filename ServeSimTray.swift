@@ -124,7 +124,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             DispatchQueue.main.async {
                 guard let self = self else { return }
                 self.refresh()
-                if !wasRunning { self.open(self.localURL) }   // open the stream once, only on a cold start
+                if !wasRunning {                                                   // cold start
+                    self.open(self.localURL)                                        // open the stream tab (interface first)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { self.simApp?.hide() }  // then tuck the Simulator away
+                }
             }
         }
     }
