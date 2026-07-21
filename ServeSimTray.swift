@@ -60,7 +60,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(.separator())
 
         if running && shareState == "public" {
-            let pub = NSMenuItem(title: "🌐 Public (Funnel) — click to view · anyone with the link can control",
+            let pub = NSMenuItem(title: "🌐 Public (Funnel) — click to view",
                                  action: #selector(viewTailnet), keyEquivalent: "")
             pub.target = self
             menu.addItem(pub); menu.addItem(.separator())
