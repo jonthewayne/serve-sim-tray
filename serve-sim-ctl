@@ -3,7 +3,7 @@
 # Subcommands: start | pause | stop | open-sim | status | url
 #   start     — reap-if-stale + boot a sim + run serve-sim (opens Simulator in background) + tailscale
 #   pause     — stop serve-sim only (sim stays booted; turns OFF public Funnel)
-#   stop      — stop serve-sim + power off the sim to free RAM (turns OFF public Funnel)
+#   stop      — stop serve-sim + shut down the sim + quit Simulator.app + turn OFF public Funnel
 #   open-sim  — open the NATIVE Simulator.app window (Hide with Cmd-H; do NOT Quit)
 #   status    — "running" (serve-sim up AND a device booted) / "stopped"; auto-reaps stale serve-sim
 #   url        — print this machine's tailnet serve URL
@@ -75,7 +75,7 @@ case "$1" in
     fi
     ;;
   pause)    pkill -f "serve-sim" 2>/dev/null || true; funnel_off ;;
-  stop)     pkill -f "serve-sim" 2>/dev/null || true; xcrun simctl shutdown all 2>/dev/null || true; funnel_off ;;
+  stop)     pkill -f "serve-sim" 2>/dev/null || true; xcrun simctl shutdown all 2>/dev/null || true; killall Simulator 2>/dev/null || true; funnel_off ;;
   open-sim) open -a Simulator ;;
   status)   reap_if_stale; if is_serving && device_booted; then echo running; else echo stopped; fi ;;
   url)       tailnet_url ;;

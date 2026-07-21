@@ -66,11 +66,10 @@ xcodebuild -downloadPlatform iOS
 
 ```bash
 git clone <this-repo> && cd serve-sim-tray
-./build.sh            # compiles ServeSimTray.swift + assembles ServeSimTray.app
-open ServeSimTray.app # menu-bar only, no Dock icon
+./build.sh install    # compiles + copies "ServeSim Tray.app" to /Applications, then launches it
 ```
 
-Move `ServeSimTray.app` to `/Applications` and use **Start at Login** to auto-run.
+Then turn on **Start at Login** (Settings) to auto-run. (`./build.sh` alone just builds the bundle.)
 
 <details>
 <summary>How it's built / how it works</summary>

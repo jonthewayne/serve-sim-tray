@@ -222,11 +222,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc func quitApp() {
         let a = NSAlert()
         a.messageText = "Quit ServeSim Tray?"
-        a.informativeText = "This will quit the tray app and stop the serve-sim process. (The simulator and Tailscale are left as-is.)"
+        a.informativeText = "This shuts down the simulator, stops serve-sim, closes public sharing, and quits the app."
         a.addButton(withTitle: "OK"); a.addButton(withTitle: "Cancel")
         NSApp.activate(ignoringOtherApps: true)
         if a.runModal() == .alertFirstButtonReturn {
-            run(["pause"]) { _ in DispatchQueue.main.async { NSApplication.shared.terminate(nil) } }
+            run(["stop"]) { _ in DispatchQueue.main.async { NSApplication.shared.terminate(nil) } }
         }
     }
 
