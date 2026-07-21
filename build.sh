@@ -15,6 +15,7 @@ cp ServeSimTray        "$APP/Contents/MacOS/ServeSimTray"
 cp Info.plist          "$APP/Contents/Info.plist"
 cp serve-sim-ctl       "$APP/Contents/Resources/serve-sim-ctl"
 cp GUIDE.html          "$APP/Contents/Resources/GUIDE.html"
+cp AppIcon.icns        "$APP/Contents/Resources/AppIcon.icns"
 chmod +x "$APP/Contents/Resources/serve-sim-ctl"
 
 echo "done → $APP"
