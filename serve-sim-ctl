@@ -1,0 +1,96 @@
+#!/bin/zsh
+# serve-sim-ctl — manage the serve-sim "render box". Self-contained + auto-detecting.
+# Subcommands: start | pause | stop | open-sim | status | url
+#   start     — reap-if-stale + boot a sim headless + run serve-sim + ensure tailscale serve
+#   pause     — stop serve-sim only (sim stays booted; Tailscale untouched)
+#   stop      — stop serve-sim + power off the sim to free RAM (Tailscale untouched)
+#   open-sim  — open the NATIVE Simulator.app window (Hide with Cmd-H; do NOT Quit)
+#   status    — "running" (serve-sim up AND a device booted) / "stopped"; auto-reaps stale serve-sim
+#   url        — print this machine's tailnet serve URL
+
+PORT=3200
+LOG="$HOME/serve-sim.log"
+
+# make node/npx (nvm), tailscale, xcrun reachable in a non-login context
+NODE_BIN=$(/bin/ls -d "$HOME"/.nvm/versions/node/*/bin 2>/dev/null | tail -1)
+[ -n "$NODE_BIN" ] && export PATH="$NODE_BIN:$PATH"
+export PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:$PATH"
+
+is_serving()    { /usr/sbin/lsof -iTCP:$PORT -sTCP:LISTEN >/dev/null 2>&1; }
+device_booted() { xcrun simctl list devices booted 2>/dev/null | grep -qi booted; }
+# serve-sim listening with NO booted device is orphaned (someone shut the sim down): reap it.
+reap_if_stale() { if is_serving && ! device_booted; then pkill -f "serve-sim" 2>/dev/null; sleep 1; fi; }
+
+# network-layer health: local-only (no Tailscale) is fine, not a warning
+net_health() {
+  if ! command -v tailscale >/dev/null 2>&1; then echo "ok"
+  elif ! tailscale status >/dev/null 2>&1; then echo "tailscale-down"
+  elif ! tailscale serve status 2>/dev/null | grep -q "127.0.0.1:$PORT"; then echo "no-serve"
+  else echo "ok"; fi
+}
+
+# prefer an already-booted device; else the first available iPhone simulator
+pick_device() {
+  local b
+  b=$(xcrun simctl list devices booted 2>/dev/null | grep -oE '[0-9A-F]{8}-[0-9A-F-]{27}' | head -1)
+  [ -n "$b" ] && { echo "$b"; return; }
+  xcrun simctl list devices available 2>/dev/null | grep -i iphone \
+    | grep -oE '[0-9A-F]{8}-[0-9A-F-]{27}' | head -1
+}
+
+# this machine's MagicDNS name -> https URL (falls back to localhost)
+tailnet_url() {
+  local name
+  name=$(tailscale status --json 2>/dev/null | grep -m1 '"DNSName"' \
+        | sed -E 's/.*"DNSName": *"([^"]+)".*/\1/' | sed 's/\.$//')
+  if [ -n "$name" ]; then echo "https://$name"; else echo "http://localhost:$PORT"; fi
+}
+
+case "$1" in
+  start)
+    reap_if_stale
+    DEV=$(pick_device)
+    [ -n "$DEV" ] && xcrun simctl boot "$DEV" 2>/dev/null || true   # headless — no Simulator.app window
+    if ! is_serving; then
+      nohup npx --yes serve-sim >"$LOG" 2>&1 &
+      for i in {1..10}; do is_serving && break; sleep 1; done
+    fi
+    if command -v tailscale >/dev/null 2>&1; then                  # expose over Tailscale if present;
+      tailscale serve --bg $PORT >/dev/null 2>&1 || true           # otherwise it's local-only (localhost)
+    fi
+    ;;
+  pause)    pkill -f "serve-sim" 2>/dev/null || true ;;
+  stop)     pkill -f "serve-sim" 2>/dev/null || true; xcrun simctl shutdown all 2>/dev/null || true ;;
+  open-sim) open -a Simulator ;;
+  status)   reap_if_stale; if is_serving && device_booted; then echo running; else echo stopped; fi ;;
+  url)       tailnet_url ;;
+  local-url) echo "http://localhost:$PORT" ;;
+  health)    net_health ;;
+  state)     # one call for the app: status, health, shareable url (3 lines)
+    reap_if_stale
+    if is_serving && device_booted; then echo running; else echo stopped; fi
+    net_health
+    tailnet_url
+    ;;
+  check)
+    arch=$(uname -m)
+    [ "$arch" = "arm64" ] && echo "✓ Apple Silicon (arm64)" || echo "✗ CPU is $arch — serve-sim needs Apple Silicon (arm64)"
+    if xcrun simctl help >/dev/null 2>&1; then echo "✓ Xcode / simctl installed"
+    else echo "✗ Xcode missing — install Xcode from the Mac App Store"; fi
+    if xcrun simctl list runtimes 2>/dev/null | grep -qi ios; then echo "✓ iOS simulator runtime present"
+    else echo "✗ No iOS runtime — Xcode ▸ Settings ▸ Components, or run: xcodebuild -downloadPlatform iOS"; fi
+    if command -v node >/dev/null 2>&1; then echo "✓ Node $(node --version)"
+    else echo "✗ Node missing — install Node 20+ (e.g. via nvm)"; fi
+    echo "ℹ serve-sim runs on demand via npx — nothing to pre-install"
+    if ! command -v tailscale >/dev/null 2>&1; then
+      echo "• Tailscale not installed → LOCAL-ONLY mode (optional; add it for remote access)"
+    elif tailscale serve status 2>/dev/null | grep -q "127.0.0.1:$PORT"; then
+      echo "✓ Tailscale Serve active — remote access ready"
+    elif tailscale status >/dev/null 2>&1; then
+      echo "✗ Tailscale up, but Serve not set up — enable at login.tailscale.com, then click Start"
+    else
+      echo "✗ Tailscale installed but not connected — open / sign in to Tailscale"
+    fi
+    ;;
+  *)        echo "usage: serve-sim-ctl {start|pause|stop|open-sim|status|url|local-url|health|state|check}" >&2; exit 1 ;;
+esac

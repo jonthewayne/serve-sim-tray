@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ServeSimTray — Quick Guide</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font: 16px/1.6 -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+         max-width: 720px; margin: 40px auto; padding: 0 22px; color: #1d1d1f; background: #fff; }
+  @media (prefers-color-scheme: dark) { body { color: #e8e8ea; background: #1c1c1e; } }
+  h1 { font-size: 26px; margin: 0 0 4px; }
+  h2 { font-size: 19px; margin: 28px 0 8px; }
+  .sub { opacity: .65; margin-top: 0; }
+  code, kbd { font: 13px "SF Mono", ui-monospace, Menlo, monospace;
+              background: rgba(128,128,128,.16); padding: 1px 6px; border-radius: 5px; }
+  .block { position: relative; }
+  pre { background: rgba(128,128,128,.12); padding: 14px 16px; border-radius: 10px; overflow-x: auto; margin: 8px 0; }
+  pre code { background: none; padding: 0; }
+  .copy { position: absolute; top: 8px; right: 8px; font: 12px -apple-system, sans-serif;
+          border: 1px solid rgba(128,128,128,.4); background: rgba(128,128,128,.12);
+          color: inherit; border-radius: 6px; padding: 3px 9px; cursor: pointer; }
+  .copy:hover { background: rgba(128,128,128,.24); }
+  table { border-collapse: collapse; width: 100%; margin: 8px 0; }
+  td, th { text-align: left; padding: 5px 10px; border-bottom: 1px solid rgba(128,128,128,.22); vertical-align: top; }
+  .warn { border-left: 3px solid #ff9f0a; padding-left: 10px; }
+  a { color: #0a84ff; }
+</style>
+</head>
+<body>
+
+<h1>ServeSimTray</h1>
+<p class="sub">Run an iOS Simulator as a live, controllable stream — locally, or shared over Tailscale.</p>
+
+<h2>First-time setup — paste this to your coding agent</h2>
+<div class="block">
+  <button class="copy" onclick="copyBlock(this)">Copy</button>
+<pre><code id="setup">Set up this Mac to run ServeSimTray (an iOS-simulator streaming menu-bar app). Do each step and
+pause to ask me when you need input (App Store sign-in, Tailscale login, enabling Serve):
+
+1. Ensure Xcode is installed (Mac App Store) and an iOS runtime is present:
+   sudo xcode-select -s /Applications/Xcode.app && xcodebuild -downloadPlatform iOS
+2. Ensure Node 20+ is installed (e.g. via nvm).
+3. (Optional, for remote/other-device access) Ensure Tailscale is installed and signed in, and
+   enable Tailscale Serve for my tailnet at login.tailscale.com. Skip this for local-only use.
+4. In the serve-sim-tray folder run ./build.sh, then move ServeSimTray.app to /Applications
+   and turn on "Start at Login" from its menu.
+Then open the app's "Check Setup…" to confirm everything is green.</code></pre>
+</div>
+<p>No agent? See the full walkthrough in <strong>README.md</strong>. Or just click <strong>Check Setup…</strong> in the menu.</p>
+
+<h2>Two ways to use it</h2>
+<ul>
+  <li><strong>Local:</strong> just hit <strong>Start</strong> and open <code>http://localhost:3200</code> — or point a local AI agent at it. No Tailscale needed.</li>
+  <li><strong>Over Tailscale:</strong> with Tailscale up + Serve enabled, the same stream is reachable from your phone, other computers, or a remote agent at your tailnet URL (<strong>Copy Sim URL</strong>).</li>
+</ul>
+
+<h2>Menu at a glance</h2>
+<table>
+  <tr><td><strong>Start</strong></td><td>Boot a sim (headless) + run serve-sim (+ expose over Tailscale if present)</td></tr>
+  <tr><td><strong>View Sim — This Mac / — Tailnet</strong></td><td>Open the stream locally (<code>localhost</code>) or via your tailnet URL; <strong>Copy … URL</strong> to share</td></tr>
+  <tr><td><strong>Open Native Simulator</strong></td><td>Apple's window. <span class="warn"><kbd>⌘H</kbd> to hide — never Quit (it shuts the device down).</span></td></tr>
+  <tr><td><strong>Pause Sim</strong> / <strong>Stop Sim</strong></td><td>Stop serving (sim booted) / stop + power off (frees RAM)</td></tr>
+  <tr><td><strong>Settings ▸</strong></td><td>Start at Login · Check Setup… · Guide (this window)</td></tr>
+  <tr><td><strong>Quit</strong></td><td>Confirm, then stop serve-sim + close</td></tr>
+</table>
+<p class="sub">Menu-bar icon: <code>iphone</code> running · <code>iphone.slash</code> stopped · <strong>⚠️</strong> if Tailscale is down (Tailscale mode only). Keep this Mac awake &amp; logged in while in use.</p>
+
+<p><strong>Full docs:</strong> see <code>README.md</code> in the repo.</p>
+
+<script>
+function copyBlock(btn){
+  var text = document.getElementById('setup').innerText;
+  var done = function(){ btn.textContent='Copied ✓'; setTimeout(function(){btn.textContent='Copy';},1400); };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done, function(){ fallback(text, done); });
+  } else { fallback(text, done); }
+}
+function fallback(text, done){
+  var ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta);
+  ta.select(); try{ document.execCommand('copy'); done(); }catch(e){} document.body.removeChild(ta);
+}
+</script>
+</body>
+</html>
