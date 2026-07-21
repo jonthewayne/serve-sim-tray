@@ -46,6 +46,18 @@ tailnet_url() {
   if [ -n "$name" ]; then echo "https://$name"; else echo "http://localhost:$PORT"; fi
 }
 
+# public (Tailscale Funnel) vs private (Serve / tailnet-only).
+# Private serve shows "(tailnet only)" on the URL line; Funnel drops it.
+share_state() {
+  command -v tailscale >/dev/null 2>&1 || { echo private; return; }
+  local out; out=$(tailscale serve status 2>/dev/null)
+  if echo "$out" | grep -q "127.0.0.1:$PORT" && ! echo "$out" | grep -qi "tailnet only"; then
+    echo public
+  else
+    echo private
+  fi
+}
+
 case "$1" in
   start)
     reap_if_stale
@@ -65,12 +77,21 @@ case "$1" in
   status)   reap_if_stale; if is_serving && device_booted; then echo running; else echo stopped; fi ;;
   url)       tailnet_url ;;
   local-url) echo "http://localhost:$PORT" ;;
+  funnel-on)
+    if command -v tailscale >/dev/null 2>&1; then tailscale funnel --bg $PORT >/dev/null 2>&1 || true; fi ;;
+  funnel-off)
+    if command -v tailscale >/dev/null 2>&1; then
+      tailscale funnel --https=443 off >/dev/null 2>&1 || true
+      tailscale serve --bg $PORT >/dev/null 2>&1 || true          # back to private serve
+    fi ;;
+  share-state) share_state ;;
   health)    net_health ;;
-  state)     # one call for the app: status, health, shareable url (3 lines)
+  state)     # one call for the app: status, health, url, share-state (4 lines)
     reap_if_stale
     if is_serving && device_booted; then echo running; else echo stopped; fi
     net_health
     tailnet_url
+    share_state
     ;;
   check)
     arch=$(uname -m)
@@ -92,5 +113,5 @@ case "$1" in
       echo "✗ Tailscale installed but not connected — open / sign in to Tailscale"
     fi
     ;;
-  *)        echo "usage: serve-sim-ctl {start|pause|stop|open-sim|status|url|local-url|health|state|check}" >&2; exit 1 ;;
+  *)        echo "usage: serve-sim-ctl {start|pause|stop|open-sim|status|url|local-url|funnel-on|funnel-off|share-state|health|state|check}" >&2; exit 1 ;;
 esac

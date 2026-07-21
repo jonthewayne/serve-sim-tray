@@ -10,6 +10,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     var running = false
     var health = "ok"                          // ok | tailscale-down | no-serve
     var simURL = "http://localhost:3200"       // shareable URL (tailnet if present, else localhost)
+    var shareState = "private"                 // private (Serve / tailnet-only) | public (Funnel)
     var guideWindow: NSWindow?
 
     let localURL = "http://localhost:3200"
@@ -58,6 +59,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         header.isEnabled = false; menu.addItem(header)
         menu.addItem(.separator())
 
+        if running && shareState == "public" {
+            let pub = NSMenuItem(title: "🌐 Public (Funnel) — anyone with the link can control", action: nil, keyEquivalent: "")
+            pub.isEnabled = false
+            menu.addItem(pub); menu.addItem(.separator())
+        }
+
         if running {
             add(menu, "View Serve-Sim — This Mac", #selector(viewLocal), "")
             if isTailnet {
@@ -86,6 +93,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let chk = NSMenuItem(title: "Check Setup…", action: #selector(checkSetup), keyEquivalent: ""); chk.target = self; sub.addItem(chk)
         let gd = NSMenuItem(title: "Guide", action: #selector(openGuide), keyEquivalent: ""); gd.target = self; sub.addItem(gd)
         sub.addItem(.separator())
+        let fn = NSMenuItem(title: "Share Publicly (Funnel)", action: #selector(toggleFunnel), keyEquivalent: "")
+        fn.target = self; fn.state = (shareState == "public") ? .on : .off; sub.addItem(fn)
+        sub.addItem(.separator())
         let cp = NSMenuItem(title: isTailnet ? "Copy Tailnet URL" : "Copy Sim URL", action: #selector(copyTailnet), keyEquivalent: "")
         cp.target = self; sub.addItem(cp)
         settings.submenu = sub
@@ -109,9 +119,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             let isRun = lines.count > 0 && lines[0] == "running"
             let hv    = (lines.count > 1 && !lines[1].isEmpty) ? lines[1] : "ok"
             let u     = (lines.count > 2 && !lines[2].isEmpty) ? lines[2] : "http://localhost:3200"
+            let sh    = (lines.count > 3 && !lines[3].isEmpty) ? lines[3] : "private"
             DispatchQueue.main.async {
                 guard let self = self else { return }
-                self.running = isRun; self.health = hv; self.simURL = u
+                self.running = isRun; self.health = hv; self.simURL = u; self.shareState = sh
                 self.applyIcon()
             }
         }
@@ -146,6 +157,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     func open(_ s: String) { if let u = URL(string: s) { NSWorkspace.shared.open(u) } }
     func copy(_ s: String) { NSPasteboard.general.clearContents(); NSPasteboard.general.setString(s, forType: .string) }
 
+    @objc func toggleFunnel() {
+        if shareState == "public" {
+            run(["funnel-off"]) { [weak self] _ in DispatchQueue.main.async { self?.refresh() } }
+            return
+        }
+        let a = NSAlert()
+        a.messageText = "Make the simulator public?"
+        a.informativeText = "Tailscale Funnel will expose the stream to the whole internet. Anyone with the link can VIEW and CONTROL your simulator (serve-sim has no password). Only share the URL with people you trust."
+        a.addButton(withTitle: "Make Public"); a.addButton(withTitle: "Cancel")
+        NSApp.activate(ignoringOtherApps: true)
+        guard a.runModal() == .alertFirstButtonReturn else { return }
+        run(["funnel-on"]) { [weak self] _ in
+            DispatchQueue.main.async {
+                self?.refresh()
+                self?.run(["share-state"]) { s in                          // confirm it actually went public
+                    if s.trimmingCharacters(in: .whitespacesAndNewlines) != "public" {
+                        DispatchQueue.main.async {
+                            let b = NSAlert()
+                            b.messageText = "Couldn't enable public sharing"
+                            b.informativeText = "Tailscale Funnel likely needs to be enabled once for your tailnet at login.tailscale.com (Access controls → Funnel), then try again."
+                            b.addButton(withTitle: "OK"); NSApp.activate(ignoringOtherApps: true); b.runModal()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     @objc func toggleLogin() {
         do { if loginEnabled { try SMAppService.mainApp.unregister() } else { try SMAppService.mainApp.register() } }
         catch { NSSound.beep() }
@@ -168,7 +207,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let win = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 660, height: 640),
                            styleMask: [.titled, .closable, .resizable, .miniaturizable],
                            backing: .buffered, defer: false)
-        win.title = "ServeSimTray — Guide"; win.center(); win.isReleasedWhenClosed = false
+        win.title = "ServeSim Tray — Guide"; win.center(); win.isReleasedWhenClosed = false
         let web = WKWebView(frame: win.contentView!.bounds)
         web.autoresizingMask = [.width, .height]
         let fileURL = URL(fileURLWithPath: p)
@@ -180,7 +219,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     @objc func quitApp() {
         let a = NSAlert()
-        a.messageText = "Quit ServeSimTray?"
+        a.messageText = "Quit ServeSim Tray?"
         a.informativeText = "This will quit the tray app and stop the serve-sim process. (The simulator and Tailscale are left as-is.)"
         a.addButton(withTitle: "OK"); a.addButton(withTitle: "Cancel")
         NSApp.activate(ignoringOtherApps: true)

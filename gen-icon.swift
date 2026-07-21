@@ -25,7 +25,7 @@ if let base = NSImage(systemSymbolName: "iphone.radiowaves.left.and.right", acce
     NSColor.white.set()
     NSRect(origin: .zero, size: gs).fill(using: .sourceAtop)
     tinted.unlockFocus()
-    let box = S * 0.60
+    let box = S * 0.74
     let scale = min(box / gs.width, box / gs.height)
     let w = gs.width * scale, h = gs.height * scale
     tinted.draw(in: NSRect(x: (S - w) / 2, y: (S - h) / 2, width: w, height: h))

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ServeSimTray — Quick Guide</title>
+<title>ServeSim Tray — Quick Guide</title>
 <style>
   :root { color-scheme: light dark; }
   body { font: 16px/1.6 -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
@@ -29,7 +29,7 @@
 </head>
 <body>
 
-<h1>ServeSimTray</h1>
+<h1>ServeSim Tray</h1>
 <p class="sub">Run an iOS Simulator as a live, controllable stream — locally, or shared over Tailscale.</p>
 
 <h2>First-time setup — paste this to your coding agent</h2>
@@ -53,6 +53,7 @@ Then open the app's "Check Setup…" to confirm everything is green.</code></pre
 <ul>
   <li><strong>Local:</strong> just hit <strong>Start</strong> and open <code>http://localhost:3200</code> — or point a local AI agent at it. No Tailscale needed.</li>
   <li><strong>Over Tailscale:</strong> with Tailscale up + Serve enabled, the same stream is reachable from your phone, other computers, or a remote agent at your tailnet URL (<strong>Copy Sim URL</strong>).</li>
+  <li><strong>Public (Settings ▸ Share Publicly):</strong> Tailscale Funnel exposes the stream to the whole internet — a friend just opens the link. <span class="warn"><strong>Anyone with the link can view <em>and control</em> the sim</strong> (no password), so only share it with people you trust.</span></li>
 </ul>
 
 <h2>Menu at a glance</h2>

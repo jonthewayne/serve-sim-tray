@@ -5,7 +5,7 @@
     <key>CFBundleName</key>
     <string>ServeSimTray</string>
     <key>CFBundleDisplayName</key>
-    <string>Serve Sim Tray</string>
+    <string>ServeSim Tray</string>
     <key>CFBundleIdentifier</key>
     <string>io.govtrack.servesimtray</string>
     <key>CFBundleVersion</key>

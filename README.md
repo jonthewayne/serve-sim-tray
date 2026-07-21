@@ -1,4 +1,4 @@
-# ServeSimTray
+# ServeSim Tray
 
 A tiny macOS **menu-bar app** that runs an iOS Simulator as a live, controllable stream — in one
 click. It wraps [serve-sim](https://github.com/EvanBacon/serve-sim) (boots a simulator and streams it
@@ -43,6 +43,7 @@ The app's **Check Setup…** menu item also verifies prerequisites and tells you
 - Menu-bar icon: `iphone` running · `iphone.slash` stopped · **⚠️** if Tailscale is down (Tailscale mode).
 - **View Serve-Sim — This Mac / — Tailnet** (the stream at localhost or your tailnet URL) · **Open / Hide / Show Native Sim** (optional Apple window; menu tracks its state — never Quit it).
 - **Start / Pause Sim / Stop Sim**, **Start at Login**, **Check Setup…**, in-app **Guide**.
+- **Share Publicly (Funnel)** toggle (Settings) — exposes the stream to the internet via Tailscale Funnel. ⚠️ Anyone with the link can **view *and control*** the sim (serve-sim has no auth); a confirmation gates it, and the menu shows a 🌐 Public warning while on.
 - Auto-detects the URL (localhost, or your tailnet name) + a bootable iPhone. Self-healing if the sim is shut down.
 
 ## Prerequisites
