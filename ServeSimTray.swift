@@ -60,8 +60,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(.separator())
 
         if running && shareState == "public" {
-            let pub = NSMenuItem(title: "🌐 Public (Funnel) — anyone with the link can control", action: nil, keyEquivalent: "")
-            pub.isEnabled = false
+            let pub = NSMenuItem(title: "🌐 Public (Funnel) — click to view · anyone with the link can control",
+                                 action: #selector(viewTailnet), keyEquivalent: "")
+            pub.target = self
             menu.addItem(pub); menu.addItem(.separator())
         }
 
@@ -96,7 +97,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let fn = NSMenuItem(title: "Share Publicly (Funnel)", action: #selector(toggleFunnel), keyEquivalent: "")
         fn.target = self; fn.state = (shareState == "public") ? .on : .off; sub.addItem(fn)
         sub.addItem(.separator())
-        let cp = NSMenuItem(title: isTailnet ? "Copy Tailnet URL" : "Copy Sim URL", action: #selector(copyTailnet), keyEquivalent: "")
+        let cpTitle = (shareState == "public") ? "Copy Public URL" : (isTailnet ? "Copy Tailnet URL" : "Copy Sim URL")
+        let cp = NSMenuItem(title: cpTitle, action: #selector(copyTailnet), keyEquivalent: "")
         cp.target = self; sub.addItem(cp)
         settings.submenu = sub
         menu.addItem(settings)
