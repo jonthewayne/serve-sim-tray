@@ -11,6 +11,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     var health = "ok"                          // ok | tailscale-down | no-serve
     var simURL = "http://localhost:3200"       // shareable URL (tailnet if present, else localhost)
     var guideWindow: NSWindow?
+    var hud: NSWindow?
 
     let localURL = "http://localhost:3200"
     var isTailnet: Bool { simURL.hasPrefix("https") }
@@ -121,10 +122,35 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc func start() {
         run(["start"]) { [weak self] _ in
             DispatchQueue.main.async {
-                self?.refresh()
-                // serve-sim launches Simulator.app itself (open -ga Simulator); tuck it out of the way.
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2) { self?.simApp?.hide() }
+                guard let self = self else { return }
+                self.refresh()
+                self.simApp?.hide()                                    // serve-sim opened Simulator; tuck it away
+                self.showHUD("Hid Native Sim — opening Serve-Sim…")    // feedback so the screen isn't blank
+                self.open(self.localURL)                               // show the stream in the browser
             }
+        }
+    }
+
+    // Small floating toast (menu-bar apps can't reliably use system notifications).
+    func showHUD(_ text: String) {
+        let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 340, height: 60),
+                         styleMask: [.borderless], backing: .buffered, defer: false)
+        w.isReleasedWhenClosed = false
+        w.level = .floating; w.isOpaque = false; w.backgroundColor = .clear; w.ignoresMouseEvents = true
+        let fx = NSVisualEffectView(frame: NSRect(x: 0, y: 0, width: 340, height: 60))
+        fx.material = .hudWindow; fx.state = .active; fx.blendingMode = .behindWindow
+        fx.wantsLayer = true; fx.layer?.cornerRadius = 12; fx.autoresizingMask = [.width, .height]
+        let label = NSTextField(labelWithString: text)
+        label.alignment = .center; label.font = .systemFont(ofSize: 13, weight: .medium)
+        label.frame = NSRect(x: 12, y: 20, width: 316, height: 20); label.autoresizingMask = [.width]
+        fx.addSubview(label)
+        w.contentView = fx
+        w.center()
+        w.orderFrontRegardless()
+        hud = w
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.2) {
+            NSAnimationContext.runAnimationGroup({ ctx in ctx.duration = 0.4; w.animator().alphaValue = 0 },
+                                                 completionHandler: { w.close() })
         }
     }
     @objc func pauseSim() { run(["pause"]) { [weak self] _ in DispatchQueue.main.async { self?.refresh() } } }
