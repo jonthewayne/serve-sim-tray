@@ -19,10 +19,15 @@ chmod +x "$APP/Contents/Resources/serve-sim-ctl"
 
 echo "done → $APP"
 
-# optional: ./build.sh install  → copy into /Applications (no signing needed; built locally)
+# optional: ./build.sh install  → quit any running instance, copy into /Applications, relaunch.
+# (No signing needed — it's compiled locally.)
 if [ "$1" = "install" ]; then
+  echo "quitting any running ServeSimTray…"
+  pkill -f "ServeSimTray.app/Contents/MacOS/ServeSimTray" 2>/dev/null && sleep 1 || true
   echo "installing to /Applications…"
   rm -rf /Applications/ServeSimTray.app
   cp -R "$APP" /Applications/ServeSimTray.app
-  echo "installed → /Applications/ServeSimTray.app"
+  echo "launching from /Applications…"
+  open /Applications/ServeSimTray.app
+  echo "installed + running → /Applications/ServeSimTray.app"
 fi
