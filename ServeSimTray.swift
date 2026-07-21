@@ -59,19 +59,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(.separator())
 
         if running {
-            add(menu, "View Sim — This Mac", #selector(viewLocal), "o")
+            add(menu, "View Serve-Sim — This Mac", #selector(viewLocal), "o")
             if isTailnet {
-                add(menu, "View Sim — Tailnet", #selector(viewTailnet), "")
-                add(menu, "Copy Tailnet URL", #selector(copyTailnet), "c")
-            } else {
-                add(menu, "Copy Local URL", #selector(copyLocal), "c")
+                add(menu, "View Serve-Sim — Tailnet", #selector(viewTailnet), "")
             }
             // Native Simulator — Open / Hide / Show, aware of its live state
             if let s = simApp {
-                if s.isHidden { add(menu, "Show Simulator", #selector(showSim), "") }
-                else          { add(menu, "Hide Simulator", #selector(hideSim), "") }
+                if s.isHidden { add(menu, "Show Native Sim", #selector(showSim), "") }
+                else          { add(menu, "Hide Native Sim", #selector(hideSim), "") }
             } else {
-                add(menu, "Open Native Simulator", #selector(openNativeSim), "")
+                add(menu, "Open Native Sim", #selector(openNativeSim), "")
             }
             menu.addItem(.separator())
             add(menu, "Pause Sim", #selector(pauseSim), "s")

@@ -37,7 +37,7 @@ The app's **Check Setup…** menu item also verifies prerequisites and tells you
 ## What you get
 
 - Menu-bar icon: `iphone` running · `iphone.slash` stopped · **⚠️** if Tailscale is down (Tailscale mode).
-- **View Sim Stream** / **Copy Sim URL** (localhost or tailnet) · **Open Native Simulator** (local window; ⌘H to hide, never Quit).
+- **View Serve-Sim — This Mac / — Tailnet** (the stream at localhost or your tailnet URL) · **Open / Hide / Show Native Sim** (optional Apple window; menu tracks its state — never Quit it).
 - **Start / Pause Sim / Stop Sim**, **Start at Login**, **Check Setup…**, in-app **Guide**.
 - Auto-detects the URL (localhost, or your tailnet name) + a bootable iPhone. Self-healing if the sim is shut down.
 
