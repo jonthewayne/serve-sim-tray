@@ -80,6 +80,7 @@ case "$1" in
   status)   reap_if_stale; if is_serving && device_booted; then echo running; else echo stopped; fi ;;
   url)       tailnet_url ;;
   local-url) echo "http://localhost:$PORT" ;;
+  ctl-ip)    tailscale ip -4 2>/dev/null | head -1 ;;
   funnel-on)
     if command -v tailscale >/dev/null 2>&1; then tailscale funnel --bg $PORT >/dev/null 2>&1 || true; fi ;;
   funnel-off)
@@ -116,5 +117,5 @@ case "$1" in
       echo "✗ Tailscale installed but not connected — open / sign in to Tailscale"
     fi
     ;;
-  *)        echo "usage: serve-sim-ctl {start|pause|stop|open-sim|status|url|local-url|funnel-on|funnel-off|share-state|health|state|check}" >&2; exit 1 ;;
+  *)        echo "usage: serve-sim-ctl {start|pause|stop|open-sim|status|url|local-url|ctl-ip|funnel-on|funnel-off|share-state|health|state|check}" >&2; exit 1 ;;
 esac

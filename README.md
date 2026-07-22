@@ -46,6 +46,32 @@ The app's **Check Setup…** menu item also verifies prerequisites and tells you
 - **Share Publicly (Funnel)** toggle (Settings) — exposes the stream to the internet via Tailscale Funnel. ⚠️ Anyone with the link can **view *and control*** the sim (serve-sim has no auth); a confirmation gates it, and the menu shows a 🌐 Public warning while on.
 - Auto-detects the URL (localhost, or your tailnet name) + a bootable iPhone. Self-healing if the sim is shut down.
 
+## Remote control (start it from another machine — no SSH)
+
+The tray runs a tiny HTTP endpoint bound to the Mac's **Tailscale IP**, port **8765** — so **only
+devices on your tailnet** can reach it (not local Wi-Fi, not the internet), and it works from anywhere
+you're on Tailscale. It exposes exactly three actions — **no shell, no filesystem**:
+
+| Endpoint | Does |
+|---|---|
+| `GET /status` | `{"running":bool,"url":"…"}` |
+| `GET /start`  | boot sim + serve-sim (no browser opens on the host) |
+| `GET /stop`   | tear down |
+
+From another tailnet machine (e.g. a dev box or its agent):
+
+```bash
+MAIN=curiouss-macbook-air                  # this Mac's MagicDNS name (or its 100.x IP)
+curl -s -m 3 "http://$MAIN:8765/status"    # available? → JSON, or times out if off / app not running
+curl -s "http://$MAIN:8765/start"          # tell it to start serving
+# poll /status until "running":true, then open the "url" it returns
+curl -s "http://$MAIN:8765/stop"
+```
+
+The host Mac must be **awake, logged in, and running the tray app** (Start at Login keeps it up). If
+`/status` times out, it's unavailable — and by design there's no way to remotely *wake* it (that needs
+the SSH-level access this deliberately avoids). The endpoint tears down when you quit the app.
+
 ## Prerequisites
 
 | Need | Why |

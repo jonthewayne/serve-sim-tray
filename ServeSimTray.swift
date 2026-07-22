@@ -1,6 +1,7 @@
 import AppKit
 import ServiceManagement
 import WebKit
+import Network
 
 let ctlPath = Bundle.main.path(forResource: "serve-sim-ctl", ofType: nil) ?? ""   // bundled in Contents/Resources
 
@@ -12,6 +13,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     var simURL = "http://localhost:3200"       // shareable URL (tailnet if present, else localhost)
     var shareState = "private"                 // private (Serve / tailnet-only) | public (Funnel)
     var guideWindow: NSWindow?
+    var controlListener: NWListener?           // tailnet-only remote-control endpoint
+    var controlBase = ""                       // http://<tailscale-ip>:8765
+    let controlPort: UInt16 = 8765
 
     let localURL = "http://localhost:3200"
     var isTailnet: Bool { simURL.hasPrefix("https") }
@@ -27,7 +31,82 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         statusItem.menu = menu
         applyIcon()
         refresh()
+        startControlServer()
         timer = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { [weak self] _ in self?.refresh() }
+    }
+
+    func applicationWillTerminate(_ note: Notification) {
+        controlListener?.cancel(); controlListener = nil     // tear down the endpoint on quit
+    }
+
+    // MARK: - Remote-control endpoint (tailnet-only: bound to the Tailscale IP)
+    func startControlServer() {
+        guard controlListener == nil else { return }
+        run(["ctl-ip"]) { [weak self] out in
+            let ip = out.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !ip.isEmpty else { return }                 // no Tailscale IP yet → try again next refresh
+            DispatchQueue.main.async { self?.bindControl(ip: ip) }
+        }
+    }
+
+    func bindControl(ip: String) {
+        guard controlListener == nil, let port = NWEndpoint.Port(rawValue: controlPort) else { return }
+        let params = NWParameters.tcp
+        params.allowLocalEndpointReuse = true
+        params.requiredLocalEndpoint = NWEndpoint.hostPort(host: NWEndpoint.Host(ip), port: port)   // Tailscale IP only
+        guard let listener = try? NWListener(using: params) else { return }
+        listener.stateUpdateHandler = { [weak self] state in
+            DispatchQueue.main.async {
+                switch state {
+                case .ready:              self?.controlBase = "http://\(ip):8765"
+                case .failed, .cancelled: self?.controlListener = nil; self?.controlBase = ""
+                default: break
+                }
+            }
+        }
+        listener.newConnectionHandler = { [weak self] conn in self?.handleControl(conn) }
+        listener.start(queue: .main)
+        controlListener = listener
+    }
+
+    func handleControl(_ conn: NWConnection) {
+        conn.start(queue: .main)
+        conn.receive(minimumIncompleteLength: 1, maximumLength: 8192) { [weak self] data, _, _, _ in
+            let req = data.flatMap { String(data: $0, encoding: .utf8) } ?? ""
+            let firstLine = req.components(separatedBy: "\r\n").first ?? ""
+            let rawPath = firstLine.components(separatedBy: " ").dropFirst().first ?? "/"
+            let path = rawPath.components(separatedBy: "?").first ?? rawPath
+            self?.controlRespond(conn, path: path)
+        }
+    }
+
+    func controlRespond(_ conn: NWConnection, path: String) {
+        func send(_ status: String, _ json: String) {
+            let resp = "HTTP/1.1 \(status)\r\nContent-Type: application/json\r\nAccess-Control-Allow-Origin: *\r\nContent-Length: \(json.utf8.count)\r\nConnection: close\r\n\r\n\(json)"
+            conn.send(content: resp.data(using: .utf8), completion: .contentProcessed { _ in conn.cancel() })
+        }
+        switch path {
+        case "/start":
+            run(["start"]) { [weak self] _ in
+                DispatchQueue.main.async {
+                    self?.refresh()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { self?.simApp?.hide() }   // tidy; no browser
+                }
+            }
+            send("200 OK", "{\"ok\":true,\"action\":\"start\"}")
+        case "/stop":
+            run(["stop"]) { [weak self] _ in DispatchQueue.main.async { self?.refresh() } }
+            send("200 OK", "{\"ok\":true,\"action\":\"stop\"}")
+        case "/status", "/":
+            run(["state"]) { out in
+                let l = out.components(separatedBy: "\n")
+                let running = (l.first ?? "") == "running"
+                let url = l.count > 2 ? l[2] : ""
+                send("200 OK", "{\"running\":\(running),\"url\":\"\(url)\"}")
+            }
+        default:
+            send("404 Not Found", "{\"ok\":false,\"error\":\"unknown path\"}")
+        }
     }
 
     // MARK: - Icon
@@ -101,6 +180,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let cpTitle = (shareState == "public") ? "Copy Public URL" : (isTailnet ? "Copy Tailnet URL" : "Copy Sim URL")
         let cp = NSMenuItem(title: cpTitle, action: #selector(copyTailnet), keyEquivalent: "")
         cp.target = self; sub.addItem(cp)
+        if !controlBase.isEmpty {
+            let rc = NSMenuItem(title: "Copy Remote-Control URL", action: #selector(copyControlURL), keyEquivalent: "")
+            rc.target = self; sub.addItem(rc)
+        }
         settings.submenu = sub
         menu.addItem(settings)
 
@@ -127,6 +210,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 guard let self = self else { return }
                 self.running = isRun; self.health = hv; self.simURL = u; self.shareState = sh
                 self.applyIcon()
+                if self.controlListener == nil { self.startControlServer() }   // recover if Tailscale came up later
             }
         }
     }
@@ -156,6 +240,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc func viewTailnet() { open(simURL) }
     @objc func copyLocal()   { copy(localURL) }
     @objc func copyTailnet() { copy(simURL) }
+    @objc func copyControlURL() { copy(controlBase) }
 
     func open(_ s: String) { if let u = URL(string: s) { NSWorkspace.shared.open(u) } }
     func copy(_ s: String) { NSPasteboard.general.clearContents(); NSPasteboard.general.setString(s, forType: .string) }
