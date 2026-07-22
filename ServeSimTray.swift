@@ -33,12 +33,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     // MARK: - Icon
     func applyIcon() {
         guard let button = statusItem.button else { return }
-        let symbol = (health != "ok") ? "exclamationmark.triangle" : (running ? "iphone" : "iphone.slash")
+        let unhealthy = running && health != "ok"                     // only warn when actively serving
+        let symbol = unhealthy ? "exclamationmark.triangle" : (running ? "iphone" : "iphone.slash")
         if let img = NSImage(systemSymbolName: symbol, accessibilityDescription: "serve-sim") {
             img.isTemplate = true; button.image = img; button.title = ""
         } else {
             button.image = nil
-            button.title = (health != "ok") ? "⚠️" : (running ? "📱" : "📴")
+            button.title = unhealthy ? "⚠️" : (running ? "📱" : "📴")
         }
     }
 
@@ -49,9 +50,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     func populate(_ menu: NSMenu) {
         menu.removeAllItems()
-        if health != "ok" {
+        if running && health != "ok" {                                 // only warn when actively serving
             let warnText = (health == "tailscale-down") ? "⚠ Tailscale not connected"
-                                                        : "⚠ Tailscale Serve not active — click Start"
+                                                        : "⚠ Tailscale Serve not active"
             let warn = NSMenuItem(title: warnText, action: nil, keyEquivalent: ""); warn.isEnabled = false
             menu.addItem(warn); menu.addItem(.separator())
         }
