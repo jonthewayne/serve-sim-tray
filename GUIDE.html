@@ -56,6 +56,28 @@ Then open the app's "Check Setup…" to confirm everything is green.</code></pre
   <li><strong>Public (Settings ▸ Share Publicly):</strong> Tailscale Funnel exposes the stream to the whole internet — a friend just opens the link. <span class="warn"><strong>Anyone with the link can view <em>and control</em> the sim</strong> (no password), so only share it with people you trust.</span></li>
 </ul>
 
+<h2>Remote control — start it from another machine (no SSH)</h2>
+<p>The app runs a tiny HTTP endpoint on this Mac's <strong>Tailscale IP</strong>, port <strong>8765</strong> —
+reachable <em>only</em> by your tailnet devices, from anywhere (no shared Wi-Fi needed). Three scoped
+actions, no shell: <code>/status</code> · <code>/start</code> · <code>/stop</code>. Grab the base URL
+from <strong>Settings ▸ Copy Remote-Control URL</strong>.</p>
+<div class="block">
+  <button class="copy" onclick="copyBlock(this)">Copy</button>
+<pre><code># From another tailnet machine (e.g. your dev box). MAIN = this Mac's name or its 100.x IP.
+MAIN=curiouss-macbook-air
+
+# Available? (host must be awake + logged in + running the app)
+curl -s -m 3 "http://$MAIN:8765/status"   # {"running":..,"url":".."}  — or times out if it's off
+
+# Start serving, wait until ready, then use the url it returns:
+curl -s "http://$MAIN:8765/start"
+until curl -s -m 3 "http://$MAIN:8765/status" | grep -q '"running":true'; do sleep 2; done
+
+# Stop when done:
+curl -s "http://$MAIN:8765/stop"</code></pre>
+</div>
+<p class="sub">If <code>/status</code> times out, the host is off or logged out — there's no remote wake (by design).</p>
+
 <h2>Menu at a glance</h2>
 <table>
   <tr><td><strong>Start</strong></td><td>Boot a sim + run serve-sim (+ expose over Tailscale if present)</td></tr>
@@ -71,7 +93,8 @@ Then open the app's "Check Setup…" to confirm everything is green.</code></pre
 
 <script>
 function copyBlock(btn){
-  var text = document.getElementById('setup').innerText;
+  var code = btn.parentNode.querySelector('code');
+  var text = code ? code.innerText : '';
   var done = function(){ btn.textContent='Copied ✓'; setTimeout(function(){btn.textContent='Copy';},1400); };
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(done, function(){ fallback(text, done); });
