@@ -77,6 +77,10 @@ until curl -s -m 3 "http://$MAIN:8765/status" | grep -q '"running":true'; do sle
 # swipes, and drag-dropped files in that page are FORWARDED TO THE SIMULATOR
 # (MJPEG stream out + WebSocket control channel back in). A remote human — or a
 # browser-driving agent — can fully drive the sim this way over Tailscale.
+#
+# Agents: the Tools panel's AX TREE toggle exposes the sim's accessibility tree in
+# the page DOM (element names + bounds) — read it for semantic targets. But the
+# overlay INTERCEPTS clicks while on: read with it ON, then toggle OFF to click.
 
 # Stop when done:
 curl -s "http://$MAIN:8765/stop"</code></pre>
