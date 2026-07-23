@@ -68,9 +68,12 @@ These are plain DOM buttons — click them by accessibility ref, not coordinates
 
 Caveats:
 - When clicking the stream you are clicking **pixel coordinates on video** — re-screenshot after UI
-  changes rather than assuming layout. (serve-sim's bundled CLI skill does semantic taps but only for
-  agents ON the Mac — not this box, by design: no dev-box→Mac shell access.)
+  changes rather than assuming layout.
 - The page streams at 60fps; give it a beat after actions before screenshotting.
+- If you are an agent running **on the main Mac itself** (next to the simulator), you have the option
+  of serve-sim's bundled CLI skill (`skills/serve-sim` in its repo) — semantic taps via
+  `serve-sim tap` etc. Over the Tailscale link **you don't**: the CLI is local-only, so from this dev
+  box the browser flow above is the way.
 
 ## Failure modes
 
