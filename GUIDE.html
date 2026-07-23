@@ -73,10 +73,17 @@ curl -s -m 3 "http://$MAIN:8765/status"   # {"running":..,"url":".."}  — or ti
 curl -s "http://$MAIN:8765/start"
 until curl -s -m 3 "http://$MAIN:8765/status" | grep -q '"running":true'; do sleep 2; done
 
+# Open the "url" from /status in a browser — it's not just a picture: clicks, typing,
+# swipes, and drag-dropped files in that page are FORWARDED TO THE SIMULATOR
+# (MJPEG stream out + WebSocket control channel back in). A remote human — or a
+# browser-driving agent — can fully drive the sim this way over Tailscale.
+
 # Stop when done:
 curl -s "http://$MAIN:8765/stop"</code></pre>
 </div>
-<p class="sub">If <code>/status</code> times out, the host is off or logged out — there's no remote wake (by design).</p>
+<p class="sub">If <code>/status</code> times out, the host is off or logged out — there's no remote wake (by design).
+Note: serve-sim's bundled Agent Skill (CLI taps/gestures) only works for agents running <em>on this Mac</em> —
+remote agents drive via the browser as above.</p>
 
 <h2>Menu at a glance</h2>
 <table>
